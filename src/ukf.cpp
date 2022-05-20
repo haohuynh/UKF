@@ -59,12 +59,6 @@ UKF::UKF()
   // initially set to false, set to true in first call of ProcessMeasurement
   is_initialized_ = false;
 
-  // if this is false, laser measurements will be ignored (except for init)
-  use_laser_ = true;
-
-  // if this is false, radar measurements will be ignored (except for init)
-  use_radar_ = true;
-
   // State dimension
   n_x_ = 5;
 
@@ -73,12 +67,6 @@ UKF::UKF()
 
   // Sigma point spreading parameter
   lambda_ = 3 - n_aug_;
-
-  // state vector: [pos1 pos2 vel_abs yaw_angle yaw_rate] in SI units and rad
-  x_ = VectorXd(n_x_);
-
-  // state covariance matrix
-  P_ = MatrixXd(n_x_, n_x_);
 
   // predicted sigma points matrix
   Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
@@ -135,8 +123,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package)
 
   // Prediction & Update
   Prediction(delta_t);
-  (meas_package.sensor_type_ == meas_package.LASER) ? UpdateLidar(meas_package): UpdateRadar(meas_package);
-  
+  (meas_package.sensor_type_ == meas_package.LASER) ? UpdateLidar(meas_package) : UpdateRadar(meas_package);
 }
 
 void UKF::Prediction(double delta_t)
