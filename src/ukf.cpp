@@ -22,10 +22,10 @@ UKF::UKF()
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 30;
+  std_a_ = .3;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 30;
+  std_yawdd_ = .3;
 
   /**
    * DO NOT MODIFY measurement noise values below.
@@ -52,7 +52,7 @@ UKF::UKF()
    */
 
   /**
-   * TODO: Complete the initialization. See ukf.h for other member properties.
+   * Complete the initialization. See ukf.h for other member properties.
    * Hint: one or more values initialized above might be wildly off...
    */
 
@@ -97,9 +97,46 @@ UKF::~UKF() {}
 void UKF::ProcessMeasurement(MeasurementPackage meas_package)
 {
   /**
-   * TODO: Complete this function! Make sure you switch between lidar and radar
+   * Complete this function! Make sure you switch between lidar and radar
    * measurements.
    */
+
+  double delta_t = (meas_package.timestamp_ - time_us_) / 1000000.0;
+  time_us_ = meas_package.timestamp_;
+
+  // Initialization
+  if (!is_initialized_)
+  { // Refer to Udacity Knowledge
+
+    if (meas_package.sensor_type_ == meas_package.LASER)
+    {
+      x_ << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], 0, 0, 0;
+      P_ << std_laspx_ * std_laspx_, 0, 0, 0, 0,
+          0, std_laspy_ * std_laspy_, 0, 0, 0,
+          0, 0, 1, 0, 0,
+          0, 0, 0, 1, 0,
+          0, 0, 0, 0, 1;
+    }
+    else
+    {
+      double range = meas_package.raw_measurements_[0];
+      double angle = meas_package.raw_measurements_[1];
+      double velocity = meas_package.raw_measurements_[2];
+      x_ << range * cos(angle), range * sin(angle), velocity, angle, angle;
+      P_ << std_radr_ * std_radr_, 0, 0, 0, 0,
+          0, std_radr_ * std_radr_, 0, 0, 0,
+          0, 0, std_radrd_ * std_radrd_, 0, 0,
+          0, 0, 0, std_radphi_ * std_radphi_, 0,
+          0, 0, 0, 0, std_radphi_ * std_radphi_;
+    }
+    is_initialized_ = true;
+    return;
+  }
+
+  // Prediction & Update
+  Prediction(delta_t);
+  (meas_package.sensor_type_ == meas_package.LASER) ? UpdateLidar(meas_package): UpdateRadar(meas_package);
+  
 }
 
 void UKF::Prediction(double delta_t)
