@@ -94,7 +94,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package)
 
   // Initialization
   if (!is_initialized_)
-  { // Refer to Udacity Knowledge
+  { // See Udacity Knowledge
 
     if (meas_package.sensor_type_ == meas_package.LASER)
     {
@@ -231,14 +231,34 @@ void UKF::Prediction(double delta_t)
   }
 }
 
+// See Laser Measurements quiz
 void UKF::UpdateLidar(MeasurementPackage meas_package)
 {
   /**
-   * TODO: Complete this function! Use lidar data to update the belief 
+   * Complete this function! Use lidar data to update the belief 
    * about the object's position. Modify the state vector, x_, and 
    * covariance, P_.
    * You can also calculate the lidar NIS, if desired.
    */
+  MatrixXd H = MatrixXd(2, 5); // Measurement Matrix
+  H << 1, 0, 0, 0, 0,
+      0, 1, 0, 0, 0;
+
+  MatrixXd Ht = H.transpose();
+
+  MatrixXd R = MatrixXd(2, 2); // Measurement Covariance
+  R << std_laspx_ * std_laspx_, 0,
+      0, std_laspy_ * std_laspy_;
+
+  VectorXd y = meas_package.raw_measurements_ - H * x_;
+  MatrixXd S = H * P_ * Ht + R;
+  MatrixXd K = P_ * Ht * S.inverse();
+
+  //Update
+  x_ = x_ + (K * y);
+  P_ = (MatrixXd::Identity(x_.size(), x_.size()) - K * H) * P_;
+
+  
 }
 
 void UKF::UpdateRadar(MeasurementPackage meas_package)
